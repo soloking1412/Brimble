@@ -1,0 +1,58 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      PORT: 3001
+      DATA_DIR: /data
+      ROOT_HOST: localhost
+      PUBLIC_PORT: 8080
+      PUBLIC_HOST_SUFFIX: localhost
+      CADDY_ADMIN_URL: http://caddy:2019
+      DOCKER_NETWORK: brimble-network
+      DEPLOYMENT_APP_PORT: 3000
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3001/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    restart: on-failure
+    volumes:
+      - brimble_data:/data
+      - ${DOCKER_SOCKET_PATH:-/var/run/docker.sock}:/var/run/docker.sock
+    networks:
+      - internal
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4173/"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    networks:
+      - internal
+
+  caddy:
+    image: caddy:2-alpine
+    depends_on:
+      api:
+        condition: service_healthy
+      web:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+    networks:
+      - internal
+
+networks:
+  internal:
+    name: brimble-network
+
+volumes:
+  brimble_data:

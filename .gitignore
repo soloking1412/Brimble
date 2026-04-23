@@ -1,0 +1,8 @@
+node_modules
+dist
+apps/*/dist
+.DS_Store
+.env
+data
+apps/web/.tanstack
+*.log

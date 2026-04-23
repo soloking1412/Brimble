@@ -1,0 +1,20 @@
+{
+  auto_https off
+  admin 0.0.0.0:2019
+}
+
+http://localhost:8080 {
+  encode zstd gzip
+
+  handle /api/* {
+    reverse_proxy api:3001
+  }
+
+  handle /healthz {
+    reverse_proxy api:3001
+  }
+
+  handle {
+    reverse_proxy web:4173
+  }
+}
